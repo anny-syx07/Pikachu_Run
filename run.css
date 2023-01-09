@@ -1,0 +1,46 @@
+*{
+    padding: 0;
+    margin: 0;
+    overflow-x: hidden;
+}
+.game{
+    width: 1500px;
+    height: 450px;
+    border: 1px solid black;
+    margin: auto;
+}
+
+#pikachu{
+    width: 170px;
+    height: 140px;
+    position:relative;
+    top: 310px;
+}
+.animate{
+    animation: jump 0.3s linear;
+}
+@keyframes jump{
+    0%{top: 170px;}
+    30%{top: 185px;}
+    50%{top: 190px;}
+    70%{top: 190px;}
+    100%{top: 170px;}
+}
+
+#pokeball{
+    width: 120px;
+    height: 130px;
+    position: relative;
+    top: 175px;
+    left: 1500px;
+    animation: pokeball 1s infinite linear;
+}
+@keyframes pokeball{
+    0%{left: 1500px}
+    100%{left: -20px}
+}
+p{
+    text-align: center;
+    text-shadow: 2px 2px 2px;
+    font-size: 50px;
+}
