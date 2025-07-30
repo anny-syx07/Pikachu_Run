@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Pikachu Run</title>
+    <link 
+      rel="stylesheet" 
+      href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" 
+      integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" 
+      crossorigin="anonymous"
+    >
+    <style>
+      /* Normalize CSS (v8.0.1) */
+      html { line-height: 1.15; -webkit-text-size-adjust: 100%; }
+      body { margin: 0; }
+      main { display: block; }
+      h1 { font-size: 2em; margin: 0.67em 0; }
+      hr { box-sizing: content-box; height: 0; overflow: visible; }
+      pre { font-family: monospace, monospace; font-size: 1em; }
+      a { background-color: transparent; }
+      abbr[title] { border-bottom: none; text-decoration: underline; text-decoration: underline dotted; }
+      b, strong { font-weight: bolder; }
+      code, kbd, samp { font-family: monospace, monospace; font-size: 1em; }
+      small { font-size: 80%; }
+      sub, sup { font-size: 75%; line-height: 0; position: relative; vertical-align: baseline; }
+      sub { bottom: -0.25em; }
+      sup { top: -0.5em; }
+      img { border-style: none; }
+      button, input, optgroup, select, textarea { font-family: inherit; font-size: 100%; line-height: 1.15; margin: 0; }
+      button, input { overflow: visible; }
+      button, select { text-transform: none; }
+      [type="button"], [type="reset"], [type="submit"], button { -webkit-appearance: button; }
+      [type="button"]::-moz-focus-inner, [type="reset"]::-moz-focus-inner, [type="submit"]::-moz-focus-inner, button::-moz-focus-inner { border-style: none; padding: 0; }
+      [type="button"]:-moz-focusring, [type="reset"]:-moz-focusring, [type="submit"]:-moz-focusring, button:-moz-focusring { outline: 1px dotted ButtonText; }
+      fieldset { padding: 0.35em 0.75em 0.625em; }
+      legend { box-sizing: border-box; color: inherit; display: table; max-width: 100%; padding: 0; white-space: normal; }
+      progress { vertical-align: baseline; }
+      textarea { overflow: auto; }
+      [type="checkbox"], [type="radio"] { box-sizing: border-box; padding: 0; }
+      [type="number"]::-webkit-inner-spin-button, [type="number"]::-webkit-outer-spin-button { height: auto; }
+      [type="search"] { -webkit-appearance: textfield; outline-offset: -2px; }
+      [type="search"]::-webkit-search-decoration { -webkit-appearance: none; }
+      ::-webkit-file-upload-button { -webkit-appearance: button; font: inherit; }
+      details { display: block; }
+      summary { display: list-item; }
+      [hidden], template { display: none; }
+
+      /* Canvas CSS */
+      .canvas-container {
+        position: relative;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .canvas-container canvas {
+        background-color: #87ceeb; /* Fallback color */
+        background-image: url('https://bismuth1991.github.io/pikachu-run/background.331bb6cb.png');
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+      .canvas-container i {
+        font-size: 25px;
+        position: relative;
+        color: black;
+        top: -220px;
+        right: 45px;
+        z-index: 1;
+      }
+
+      .filter-invert {
+        -webkit-filter: invert(0.7);
+        filter: invert(0.7);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="canvas-container" style="color: #b8d0b6">
+      <canvas style="border: 1px solid black"></canvas>
+      <i id="volume-button" class="fas fa-volume-mute"></i>
+    </div>
+    <audio src="https://www.dropbox.com/s/jv6t0lullnqxow7/Battle%21%20Pok%C3%A9mon%20Music%20Compilation.mp3?dl=1"></audio>
+
+    <script>
+      // Constants from constant.js
+      const GRAVITY = 5;
+      const BASE_Y = 389;
+      const CANVAS_HEIGHT = 500;
+      const CANVAS_WIDTH = 800;
+      const IGNORE_GRAVITY = 0;
+      const ENERGY_LOSS = 0.9;
+      const PIKACHU_HEIGHT = 43;
+      const PIKACHU_WIDTH = 60;
+      const PIKACHU_JUMP_HEIGHT = 65;
+      const PIKACHU_RUN_SPEED = 20;
+      const PIKACHU_MASS = 0.8;
+      const SPAWN_X = CANVAS_WIDTH / 2 - PIKACHU_WIDTH / 2;
+      const SPAWN_Y = CANVAS_HEIGHT / 2 - PIKACHU_HEIGHT / 2 - 30;
+      const NUM_BUBBLES = 30;
+      const MIN_RADIUS = 10;
+      const MAX_RADIUS = 20;
+      const MAX_ROTATION = 100;
+      const BUBBLE_MIN_SPAWN_X = 0;
+      const BUBBLE_MAX_SPAWN_X = CANVAS_WIDTH;
+      const BUBBLE_SPAWN_Y = -50;
+      const NUM_POPPING_LINES = 6;
+      const BUBBLE_POINTS = 50;
+      const NUM_SPEAROWS = 5;
+      const SPEAROW_MIN_SPAWN_Y = 150;
+      const SPEAROW_MAX_SPAWN_Y = 270;
+      const SPEAROW_MIN_SPAWN_X = 1000;
+      const SPEAROW_MAX_SPAWN_X = 4000;
+      const SPEAROW_SPEED = 15;
+      const SPEAROW_POINTS = -100;
+      const NUM_PRIMEAPES = 1;
+      const PRIMEAPE_MIN_SPAWN_X = 1000;
+      const PRIMEAPE_MAX_SPAWN_X = 1500;
+      const PRIMEAPE_SPEED = 10;
+      const PRIMEAPE_HEIGHT = 66;
+      const PRIMEAPE_POINTS = -300;
+      const PRIMEAPE_FRAMES_TILL_NEXT_ACTION = 20;
+      const NUM_DRAGONITE = 1;
+      const DRAGONITE_MIN_SPAWN_Y = 10;
+      const DRAGONITE_MAX_SPAWN_Y = 50;
+      const DRAGONITE_MIN_SPAWN_X = 2000;
+      const DRAGONITE_MAX_SPAWN_X = 4000;
+      const DRAGONITE_MIN_SPEED = 5;
+      const DRAGONITE_MAX_SPEED = 10;
+      const DRAGONITE_METEORS_ACTIVATION_X = CANVAS_WIDTH - 200;
+      const DRAGONITE_METEORS_DEACTIVATION_X = -200;
+      const DRAGONITE_POINTS = -1000;
+      const NUM_METEORS = 10;
+      const METEOR_MASS = 0.1;
+      const METEOR_FRICTION = 0.95;
+      const METEOR_MIN_RADIUS = 20;
+      const METEOR_MAX_RADIUS = 30;
+      const METEOR_MIN_SPAWN_X = 0;
+      const METEOR_MAX_SPAWN_X = CANVAS_WIDTH;
+      const METEOR_MIN_SPAWN_Y = -100;
+      const METEOR_MAX_SPAWN_Y = -300;
+      const METEOR_POINTS = -500;
+      const METEOR_COLORS = ["#112F41", "#068587", "#4FB99F", "#F2B134", "#ED553B"];
+      const NUM_MINI_METEORS = 10;
+      const MINI_METEOR_MASS = 0.1;
+      const MINI_METEOR_FRICTION = 0.99;
+      const MINI_METEOR_MIN_RADIUS = 2;
+      const MINI_METEOR_MAX_RADIUS = 3;
+      const MINI_METEOR_POINTS = 50;
+
+      // Utility functions
+      const randomFromRange = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+      const randomColor = (colors) => colors[Math.floor(Math.random() * colors.length)];
+
+      // Sprite class
+      class Sprite {
+        constructor(image, height, width, frameCount, totalFrames) {
+          this.image = image;
+          this.height = height / totalFrames;
+          this.width = width / frameCount;
+          this.frameCount = frameCount;
+          this.currentFrame = 0;
+          this.isLeft = false;
+        }
+        srcX() { return this.currentFrame * this.width; }
+        srcY() { return this.isLeft ? this.height : 0; }
+        updateFrame() { this.currentFrame = (this.currentFrame + 1) % this.frameCount; }
+      }
+
+      // Physics class
+      class Physics {
+        constructor(x, y, mass) {
+          this.x = x;
+          this.y = y;
+          this.mass = mass;
+          this.dLeft = 0;
+          this.dRight = 0;
+          this.dUp = 0;
+          this.dDown = 0;
+        }
+        dX() { return -this.dLeft + this.dRight; }
+        dY() { return -this.dUp + this.dDown; }
+        updatePos() {
+          if (this.y < BASE_Y) {
+            this.dUp *= ENERGY_LOSS;
+            this.dDown += GRAVITY * this.mass;
+          }
+          this.x += this.dX();
+          this.y += this.dY();
+        }
+      }
+
+      // PoppingLine class
+      class PoppingLine {
+        constructor(bubble, index) {
+          this.bubble = bubble;
+          this.index = index;
+          this.lineLength = 0;
+          this.popDistance = 0;
+          this.maxPopDistant = 0.3 * bubble.radius;
+          this.popDistanceReturn = 0;
+          this.inversePop = false;
+        }
+        resetValues() {
+          this.lineLength = 0;
+          this.popDistance = 0;
+          this.popDistanceReturn = 0;
+          this.inversePop = false;
+        }
+        getValues() {
+          const { physics } = this.bubble;
+          const { popDistanceReturn, popDistance, index } = this;
+          this.x = physics.x + (physics.radius + popDistanceReturn) * Math.cos(2 * Math.PI * index / this.bubble.lines.length);
+          this.y = physics.y + (physics.radius + popDistanceReturn) * Math.sin(2 * Math.PI * index / this.bubble.lines.length);
+          this.lineLength = physics.radius * popDistance;
+          this.endX = this.lineLength;
+          this.endY = this.lineLength;
+          if (this.x < physics.x) this.endX = -this.lineLength;
+          if (this.y < physics.y) this.endY = -this.lineLength;
+          if (this.y === physics.y) this.endY = 0;
+          if (this.x === physics.x) this.endX = 0;
+        }
+        updateValues() {
+          if (this.lineLength < this.maxPopDistant && !this.inversePop) {
+            this.popDistance += 0.06;
+          } else if (this.popDistance >= 0) {
+            this.inversePop = true;
+            this.popDistanceReturn += 1;
+            this.popDistance -= 0.03;
+          } else {
+            this.resetValues();
+            this.bubble.resetPhysics();
+            this.bubble.isPop = false;
+          }
+        }
+      }
+
+      // Pikachu-related classes
+      const pikachuStaticSprite = new Sprite(new Image(), 96, 161, 2, 4); pikachuStaticSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-standing.68ad9565.png";
+      const pikachuRunRightSprite = new Sprite(new Image(), 48, 240, 1, 4); pikachuRunRightSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-running-right.b3e20e51.png";
+      const pikachuRunLeftSprite = new Sprite(new Image(), 48, 240, 1, 4); pikachuRunLeftSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-running-left.dad29e2c.png";
+      const pikachuRunSprite = new Sprite(new Image(), 96, 240, 2, 4); pikachuRunSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-running.91f2b750.png";
+      const pikachuRollSprite = new Sprite(new Image(), 96, 192, 2, 4); pikachuRollSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-rolling.2e2dd525.png";
+      const pikachuTakeDamageSprite = new Sprite(new Image(), 96, 294, 2, 6); pikachuTakeDamageSprite.image.src = "https://bismuth1991.github.io/pikachu-run/pikachu-take-damage.51490f1e.png";
+      const pikachuPhysics = () => new Physics(SPAWN_X, SPAWN_Y, IGNORE_GRAVITY);
+
+      class Pikachu {
+        constructor() {
+          this.physics = pikachuPhysics();
+          this.sprite = pikachuRunSprite;
+          this.points = 0;
+          this.lifeLeft = 3;
+          this.isADPress = false;
+          this.isLeft = false;
+          this.isKeyLock = true;
+        }
+        addPoints(points) { this.points += points; }
+        jump() {
+          this.sprite = pikachuRollSprite;
+          this.sprite.isLeft = this.isLeft;
+          this.physics.dUp = PIKACHU_JUMP_HEIGHT;
+        }
+        takeDamage(damage = 5) {
+          this.lifeLeft -= 1;
+          this.sprite = pikachuTakeDamageSprite;
+          this.sprite.isLeft = this.isLeft;
+          this.physics.dLeft = 0;
+          this.physics.dRight = 0;
+          this.isKeyLock = true;
+          this.isInvincible = true;
+          this.isLeft ? this.physics.dRight = damage : this.physics.dLeft = damage;
+          setTimeout(() => { this.sprite = pikachuStaticSprite; this.isKeyLock = false; }, 1000);
+          setTimeout(() => { this.isInvincible = false; }, 2000);
+        }
+        faint() {
+          this.physics = pikachuPhysics();
+          this.isKeyLock = true;
+          this.sprite = pikachuTakeDamageSprite;
+        }
+        runLeft() {
+          if (!this.isADPress) {
+            this.isADPress = true;
+            this.isLeft = true;
+            this.sprite = pikachuRunSprite;
+            this.sprite.isLeft = this.isLeft;
+            this.physics.dRight = 0;
+            this.physics.dLeft = PIKACHU_RUN_SPEED;
+          }
+        }
+        runRight() {
+          if (!this.isADPress) {
+            this.isADPress = true;
+            this.isLeft = false;
+            this.sprite = pikachuRunSprite;
+            this.sprite.isLeft = this.isLeft;
+            this.physics.dLeft = 0;
+            this.physics.dRight = PIKACHU_RUN_SPEED;
+          }
+        }
+        stop(key) {
+          if (key === "d") { this.isADPress = false; this.physics.dRight = 0; }
+          if (key === "a") { this.isADPress = false; this.physics.dLeft = 0; }
+          if (this.physics.dX() === 0) {
+            this.sprite = pikachuStaticSprite;
+            this.sprite.isLeft = this.isLeft;
+          }
+        }
+        stayOnGround() {
+          const { physics } = this;
+          if (physics.y + physics.dY() + GRAVITY * physics.mass > BASE_Y - PIKACHU_HEIGHT) {
+            physics.y = BASE_Y - PIKACHU_HEIGHT;
+            physics.dDown = 0;
+            physics.dUp = 0;
+          }
+        }
+        isOutOfBounds() {
+          const x = this.physics.x;
+          return x < 0 || x + this.sprite.width > CANVAS_WIDTH;
+        }
+        resetPhysics() {
+          let x = this.physics.x;
+          if (x < 0) this.physics.x = 0;
+          if (x + this.sprite.width > CANVAS_WIDTH) this.physics.x = CANVAS_WIDTH - this.sprite.width;
+        }
+      }
+
+      // Bubble-related classes
+      class Bubble {
+        constructor() {
+          this.physics = new Physics(randomFromRange(BUBBLE_MIN_SPAWN_X, BUBBLE_MAX_SPAWN_X), BUBBLE_SPAWN_Y, IGNORE_GRAVITY);
+          this.radius = randomFromRange(MIN_RADIUS, MAX_RADIUS);
+          this.isPop = false;
+          this.maxRotation = MAX_ROTATION;
+          this.rotation = Math.floor(Math.random() * (2 * MAX_ROTATION)) - MAX_ROTATION;
+          this.rotationDirection = "forward";
+          this.lines = [];
+          for (let i = 0; i < NUM_POPPING_LINES; i++) this.lines.push(new PoppingLine(this, i));
+        }
+        rotate() {
+          this.rotationDirection === "forward" ? this.rotation < this.maxRotation ? this.rotation += 1 : this.rotationDirection = "backward" : this.rotation > -this.maxRotation ? this.rotation -= 1 : this.rotationDirection = "forward";
+        }
+        pop() { this.isPop = true; }
+        resetPhysics() { this.physics = new Physics(randomFromRange(BUBBLE_MIN_SPAWN_X, BUBBLE_MAX_SPAWN_X), BUBBLE_SPAWN_Y, IGNORE_GRAVITY); }
+        isOutOfBounds() { return this.physics.x > CANVAS_WIDTH || this.physics.x < 0 || this.physics.y > CANVAS_HEIGHT; }
+        static makeBubbles() {
+          const bubbles = [];
+          for (let i = 0; i < NUM_BUBBLES; i++) bubbles.push(new Bubble());
+          return bubbles;
+        }
+      }
+
+      // Spearow-related classes
+      const spearowSprite = new Sprite(new Image(), 50, 224, 1, 4); spearowSprite.image.src = "https://bismuth1991.github.io/pikachu-run/spearow-small.8c7597b1.png";
+      const spearowPhysics = () => {
+        const physics = new Physics(randomFromRange(SPEAROW_MIN_SPAWN_X, SPEAROW_MAX_SPAWN_X), randomFromRange(SPEAROW_MIN_SPAWN_Y, SPEAROW_MAX_SPAWN_Y), IGNORE_GRAVITY);
+        physics.dLeft = SPEAROW_SPEED;
+        return physics;
+      };
+      class Spearow {
+        constructor() {
+          this.physics = spearowPhysics();
+          this.sprite = spearowSprite;
+        }
+        isOutOfBounds() { return this.physics.x + this.sprite.width < 0; }
+        resetPhysics() { this.physics = spearowPhysics(); }
+        static makeSpearows() {
+          const spearows = [];
+          for (let i = 0; i < NUM_SPEAROWS; i++) spearows.push(new Spearow());
+          return spearows;
+        }
+      }
+
+      // MiniMeteor class
+      class MiniMeteor {
+        constructor(x, y, color) {
+          this.physics = new Physics(x, y, MINI_METEOR_MASS);
+          this.radius = randomFromRange(MINI_METEOR_MIN_RADIUS, MINI_METEOR_MAX_RADIUS);
+          this.color = color;
+          this.timeToLive = 50;
+        }
+        isHitGround() { return this.physics.y + this.radius >= BASE_Y; }
+        bounce() {
+          this.physics.dUp = this.physics.dDown * MINI_METEOR_FRICTION;
+          this.physics.dDown = 0;
+          this.physics.dLeft *= MINI_METEOR_FRICTION;
+          this.physics.dRight *= MINI_METEOR_FRICTION;
+        }
+      }
+
+      // Meteor class
+      class Meteor {
+        constructor() {
+          this.physics = new Physics(randomFromRange(METEOR_MIN_SPAWN_X, METEOR_MAX_SPAWN_X), randomFromRange(METEOR_MIN_SPAWN_Y, METEOR_MAX_SPAWN_Y), METEOR_MASS);
+          this.radius = randomFromRange(METEOR_MIN_RADIUS, METEOR_MAX_RADIUS);
+          this.color = randomColor(METEOR_COLORS);
+          this.miniMeteors = [];
+        }
+        isHitGround() { return this.physics.y + this.radius > BASE_Y; }
+        bounce() {
+          this.physics.dUp = this.physics.dDown * METEOR_FRICTION;
+          this.physics.dDown = 0;
+          this.physics.dLeft *= METEOR_FRICTION;
+          this.physics.dRight *= METEOR_FRICTION;
+        }
+        reset() {
+          this.physics = new Physics(randomFromRange(METEOR_MIN_SPAWN_X, METEOR_MAX_SPAWN_X), randomFromRange(METEOR_MIN_SPAWN_Y, METEOR_MAX_SPAWN_Y), METEOR_MASS);
+          this.radius = randomFromRange(METEOR_MIN_RADIUS, METEOR_MAX_RADIUS);
+          this.color = randomColor(METEOR_COLORS);
+        }
+        explosion() {
+          for (let i = 0; i < NUM_MINI_METEORS; i++) this.miniMeteors.push(new MiniMeteor(this.physics.x, this.physics.y, this.color));
+          if (this.radius <= 15) this.reset();
+          this.radius -= 5;
+        }
+        static makeMeteor() {
+          const meteors = [];
+          for (let i = 0; i < NUM_METEORS; i++) meteors.push(new Meteor());
+          return meteors;
+        }
+      }
+
+      // Dragonite-related classes
+      const dragoniteSprite = new Sprite(new Image(), 252, 1760, 2, 11); dragoniteSprite.image.src = "https://bismuth1991.github.io/pikachu-run/dragonite-small.48bacc0d.png";
+      const dragonitePhysics = () => {
+        const physics = new Physics(randomFromRange(DRAGONITE_MIN_SPAWN_X, DRAGONITE_MAX_SPAWN_X), randomFromRange(DRAGONITE_MIN_SPAWN_Y, DRAGONITE_MAX_SPAWN_Y), IGNORE_GRAVITY);
+        physics.dLeft = randomFromRange(DRAGONITE_MIN_SPEED, DRAGONITE_MAX_SPEED);
+        return physics;
+      };
+      class Dragonite {
+        constructor() {
+          this.physics = dragonitePhysics();
+          this.sprite = dragoniteSprite;
+          this.sprite.isLeft = true;
+          this.meteors = [];
+          this.isMeteorsActivate = false;
+        }
+        isOutOfBounds() { return this.physics.x + this.sprite.width < DRAGONITE_METEORS_DEACTIVATION_X; }
+        resetPhysics() { this.physics = dragonitePhysics(); }
+        activateDracoMeteor() {
+          this.meteors = Meteor.makeMeteor();
+          this.isMeteorsActivate = true;
+          addFilterInvert(getCanvasBackground());
+        }
+        deactivateDracoMeteor() {
+          this.meteors = [];
+          this.isMeteorsActivate = false;
+          removeFilterInvert(getCanvasBackground());
+        }
+        static makeDragonites() {
+          const dragonites = [];
+          for (let i = 0; i < NUM_DRAGONITE; i++) dragonites.push(new Dragonite());
+          return dragonites;
+        }
+      }
+
+      // Primeape-related classes
+      const primeapeStaticSprite = new Sprite(new Image(), 69, 748, 1, 11); primeapeStaticSprite.image.src = "https://bismuth1991.github.io/pikachu-run/primeape-stand.43177b5f.png";
+      const primeapeRunSprite = new Sprite(new Image(), 69, 740, 1, 10); primeapeRunSprite.image.src = "https://bismuth1991.github.io/pikachu-run/primeape-run.e5b4539f.png";
+      const primeapePunchSprite = new Sprite(new Image(), 69, 1560, 1, 12); primeapePunchSprite.image.src = "https://bismuth1991.github.io/pikachu-run/primeape-focus-punch.785ca503.png";
+      const primeapePhysics = () => {
+        const physics = new Physics(randomFromRange(PRIMEAPE_MIN_SPAWN_X, PRIMEAPE_MAX_SPAWN_X), BASE_Y - PRIMEAPE_HEIGHT, IGNORE_GRAVITY);
+        physics.dLeft = PRIMEAPE_SPEED;
+        return physics;
+      };
+      class Primeape {
+        constructor() {
+          this.physics = primeapePhysics();
+          this.sprite = primeapeRunSprite;
+          this.framesPassed = 0;
+        }
+        updateFramesPassed() { this.framesPassed += 1; }
+        resetFramesPassed() { this.framesPassed = 0; }
+        run() { this.sprite = primeapeRunSprite; this.physics.dLeft = PRIMEAPE_SPEED; }
+        stop() { this.sprite = primeapeStaticSprite; this.physics.dLeft = 0; }
+        punch() { this.sprite = primeapePunchSprite; this.physics.dLeft = 0; }
+        randomAction() {
+          const action = randomFromRange(1, 3);
+          if (action === 1) this.stop();
+          else if (action === 2) this.run();
+          else if (action === 3) this.punch();
+        }
+        isOutOfBounds() { return this.physics.x + this.sprite.width < 0; }
+        resetPhysics() { this.physics = primeapePhysics(); }
+        static makePrimeapes() {
+          const primeapes = [];
+          for (let i = 0; i < NUM_PRIMEAPES; i++) primeapes.push(new Primeape());
+          return primeapes;
+        }
+      }
+
+      // Assets
+      const assets = () => ({
+        pikachu: new Pikachu(),
+        dragonites: Dragonite.makeDragonites(),
+        primeapes: Primeape.makePrimeapes(),
+        spearows: Spearow.makeSpearows(),
+        bubbles: Bubble.makeBubbles()
+      });
+
+      // Draw functions
+      const drawAsset = (entity, ctx) => {
+        if (entity.isOutOfBounds()) entity.resetPhysics();
+        const { physics, sprite } = entity;
+        ctx.save();
+        ctx.translate(physics.x, physics.y);
+        ctx.drawImage(sprite.image, sprite.srcX(), sprite.srcY(), sprite.width, sprite.height, 0, 0, sprite.width, sprite.height);
+        ctx.restore();
+        physics.updatePos();
+        sprite.updateFrame();
+      };
+
+      const drawPikachu = (pikachu, ctx) => {
+        pikachu.stayOnGround();
+        drawAsset(pikachu, ctx);
+      };
+
+      const drawPoints = (score, life, ctx) => {
+        ctx.font = "20px Comic Sans MS";
+        ctx.textAlign = "left";
+        ctx.fillStyle = "black";
+        ctx.fillText(`Score: ${score}     Life count: ${life}`, 30, 30);
+      };
+
+      const isRRCollided = (entity1, entity2) => {
+        return entity1.physics.x < entity2.physics.x + entity2.sprite.width &&
+               entity1.physics.x + entity1.sprite.width > entity2.physics.x &&
+               entity1.physics.y < entity2.physics.y + entity2.sprite.height &&
+               entity1.physics.y + entity1.sprite.height > entity2.physics.y;
+      };
+
+      const isRCCollided = (entity1, entity2) => {
+        const dx = Math.abs(entity2.physics.x - entity1.physics.x - entity1.sprite.width / 2);
+        const dy = Math.abs(entity2.physics.y - entity1.physics.y - entity1.sprite.height / 2);
+        if (dx > entity1.sprite.width / 2 + entity2.radius) return false;
+        if (dy > entity1.sprite.height / 2 + entity2.radius) return false;
+        if (dx <= entity1.sprite.width / 2) return true;
+        if (dy <= entity1.sprite.height / 2) return true;
+        const dx2 = dx - entity1.sprite.width / 2;
+        const dy2 = dy - entity1.sprite.height / 2;
+        return dx2 * dx2 + dy2 * dy2 <= entity2.radius * entity2.radius;
+      };
+
+      const drawMiniMeteor = (miniMeteor, pikachu, ctx) => {
+        if (isRCCollided(pikachu, miniMeteor)) pikachu.addPoints(MINI_METEOR_POINTS);
+        ctx.save();
+        ctx.translate(miniMeteor.physics.x, miniMeteor.physics.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, miniMeteor.radius, 0, 2 * Math.PI, false);
+        ctx.shadowColor = miniMeteor.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = miniMeteor.color;
+        ctx.fill();
+        ctx.closePath();
+        ctx.restore();
+        if (miniMeteor.isHitGround()) miniMeteor.bounce();
+        miniMeteor.physics.updatePos();
+      };
+
+      const drawMeteor = (meteor, pikachu, ctx) => {
+        if (isRCCollided(pikachu, meteor) && !pikachu.isInvincible) {
+          pikachu.takeDamage();
+          pikachu.addPoints(METEOR_POINTS);
+        }
+        ctx.save();
+        ctx.translate(meteor.physics.x, meteor.physics.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, meteor.radius, 0, 2 * Math.PI, false);
+        ctx.shadowColor = meteor.color;
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = meteor.color;
+        ctx.fill();
+        ctx.closePath();
+        ctx.restore();
+        if (meteor.miniMeteors.length > 0) {
+          for (let i = 0; i < meteor.miniMeteors.length; i++) {
+            const miniMeteor = meteor.miniMeteors[i];
+            drawMiniMeteor(miniMeteor, pikachu, ctx);
+            miniMeteor.timeToLive -= 1;
+            if (miniMeteor.timeToLive <= 0) meteor.miniMeteors.splice(i, 1);
+          }
+        }
+        if (meteor.isHitGround()) {
+          meteor.explosion();
+          meteor.bounce();
+        }
+        meteor.physics.updatePos();
+      };
+
+      const drawDragonites = (dragonites, pikachu, ctx) => {
+        dragonites.forEach(dragonite => {
+          drawAsset(dragonite, ctx);
+          if (isRRCollided(pikachu, dragonite) && !pikachu.isInvincible) {
+            pikachu.takeDamage();
+            pikachu.addPoints(DRAGONITE_POINTS);
+          }
+          if (dragonite.physics.x < DRAGONITE_METEORS_ACTIVATION_X && !dragonite.isMeteorsActivate) dragonite.activateDracoMeteor();
+          if (dragonite.meteors.length > 0) {
+            for (let i = 0; i < dragonite.meteors.length; i++) drawMeteor(dragonite.meteors[i], pikachu, ctx);
+          }
+          if (dragonite.isOutOfBounds()) dragonite.deactivateDracoMeteor();
+        });
+      };
+
+      const drawPrimeapes = (primeapes, pikachu, ctx) => {
+        primeapes.forEach(primeape => {
+          drawAsset(primeape, ctx);
+          if (isRRCollided(pikachu, primeape) && !pikachu.isInvincible) {
+            pikachu.takeDamage();
+            pikachu.addPoints(PRIMEAPE_POINTS);
+          }
+          primeape.updateFramesPassed();
+          if (primeape.framesPassed > PRIMEAPE_FRAMES_TILL_NEXT_ACTION) {
+            primeape.randomAction();
+            primeape.resetFramesPassed();
+          }
+        });
+      };
+
+      const drawBubbles = (bubbles, pikachu, ctx) => {
+        bubbles.forEach(bubble => {
+          if (isRCCollided(pikachu, bubble)) {
+            bubble.pop();
+            pikachu.addPoints(BUBBLE_POINTS);
+          }
+          bubble.rotate();
+          if (bubble.isPop) {
+            bubble.lines.forEach(line => {
+              line.getValues();
+              ctx.beginPath();
+              ctx.strokeStyle = "black";
+              ctx.lineWidth = 1;
+              ctx.moveTo(line.x, line.y);
+              ctx.lineTo(line.x + line.endX, line.y + line.endY);
+              ctx.stroke();
+              line.updateValues();
+            });
+          } else {
+            ctx.save();
+            ctx.translate(bubble.physics.x, bubble.physics.y);
+            ctx.rotate(bubble.rotation * Math.PI / 180);
+            ctx.beginPath();
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+            ctx.arc(0, 0, bubble.radius - 3, 0, 1.5 * Math.PI, true);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, bubble.radius, 0, 2 * Math.PI, false);
+            ctx.stroke();
+            ctx.restore();
+          }
+          if (bubble.isOutOfBounds()) bubble.resetPhysics();
+          bubble.physics.updatePos();
+        });
+      };
+
+      const drawSpearows = (spearows, pikachu, ctx) => {
+        spearows.forEach(spearow => {
+          if (isRRCollided(pikachu, spearow) && !pikachu.isInvincible) {
+            pikachu.takeDamage();
+            pikachu.addPoints(SPEAROW_POINTS);
+          }
+          drawAsset(spearow, ctx);
+        });
+      };
+
+      const drawSplashScreen = (ctx) => {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.font = "40px Comic Sans MS";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.fillText("WELCOME!", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 55);
+        ctx.font = "20px Comic Sans MS";
+        ctx.fillText("Press SPACEBAR to start", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
+        ctx.fillText("Use A, D, W to move", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
+      };
+
+      const drawGameOver = (ctx, score) => {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.font = "40px Comic Sans MS";
+        ctx.fillStyle = "white";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 - 55);
+        ctx.font = "20px Comic Sans MS";
+        ctx.fillText(`Your Score is: ${score}`, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 10);
+        ctx.fillText("Press SPACEBAR to restart", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 40);
+      };
+
+      // DOM Manipulators
+      const getCanvasBackground = () => document.getElementsByClassName("canvas-container")[0];
+      const addFilterInvert = (element) => element.classList.add("filter-invert");
+      const removeFilterInvert = (element) => element.classList.remove("filter-invert");
+      const removeCanvasFilterInvert = () => removeFilterInvert(getCanvasBackground());
+      const playAudio = () => {
+        const audio = document.querySelector("audio");
+        const button = document.getElementById("volume-button");
+        button.classList.remove("fa-volume-mute");
+        button.classList.add("fa-volume-up");
+        audio.play();
+      };
+      const pauseAudio = () => {
+        const audio = document.querySelector("audio");
+        const button = document.getElementById("volume-button");
+        button.classList.remove("fa-volume-up");
+        button.classList.add("fa-volume-mute");
+        audio.pause();
+      };
+      const setupVolumeButtonEventListener = () => {
+        document.getElementById("volume-button").addEventListener("click", () => {
+          if (document.getElementById("volume-button").classList.contains("fa-volume-mute")) playAudio();
+          else pauseAudio();
+        });
+      };
+
+      // GameCanvas class
+      class GameCanvas {
+        constructor(canvas, ctx) {
+          this.canvas = canvas;
+          this.ctx = ctx;
+          this.assets = assets();
+          this.state = "begin";
+        }
+        begin() { this.state = "begin"; }
+        play() {
+          removeCanvasFilterInvert();
+          playAudio();
+          this.assets = assets();
+          this.state = "start";
+        }
+        gameOver(pikachu) {
+          this.state = "gameOver";
+          pikachu.faint();
+        }
+        draw(frameRate) {
+          const targetFrameTime = 1000 / frameRate;
+          let lastTime = performance.now();
+          const animate = () => {
+            requestAnimationFrame(animate);
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            if (deltaTime >= targetFrameTime) {
+              lastTime = currentTime - (deltaTime % targetFrameTime);
+              this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+              const [pikachu, dragonites, primeapes, spearows, bubbles] = Object.values(this.assets);
+              if (pikachu.lifeLeft <= 0) this.gameOver(pikachu);
+              if (this.state === "begin") drawSplashScreen(this.ctx);
+              else if (this.state === "gameOver") drawGameOver(this.ctx, pikachu.points);
+              else {
+                pikachu.physics.mass = PIKACHU_MASS;
+                pikachu.isKeyLock = false;
+                drawSpearows(spearows, pikachu, this.ctx);
+                drawPrimeapes(primeapes, pikachu, this.ctx);
+                drawDragonites(dragonites, pikachu, this.ctx);
+                drawBubbles(bubbles, pikachu, this.ctx);
+                drawPoints(pikachu.points, pikachu.lifeLeft, this.ctx);
+              }
+            }
+          };
+          animate();
+        }
+      }
+
+      // Pikachu Controls
+      const setupControlListeners = (game) => {
+        window.addEventListener("keydown", (event) => {
+          if (!event.repeat) {
+            const key = event.key;
+            if (key === " ") {
+              if (game.state === "begin" || game.state === "gameOver") game.play();
+            }
+            const pikachu = game.assets.pikachu;
+            if (!pikachu.isKeyLock) {
+              if (key === "w") pikachu.jump();
+              else if (key === "a") pikachu.runLeft();
+              else if (key === "d") pikachu.runRight();
+            }
+          }
+        });
+        window.addEventListener("keyup", (event) => {
+          const key = event.key;
+          const pikachu = game.assets.pikachu;
+          if (!pikachu.isKeyLock) pikachu.stop(key);
+        });
+      }
+
+      // Initialize game
+      window.addEventListener("DOMContentLoaded", () => {
+        const canvas = document.querySelector("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+        const game = new GameCanvas(canvas, ctx);
+        game.draw(15);
+        setupControlListeners(game);
+        setupVolumeButtonEventListener();
+      });
+    </script>
+  </body>
+</html>
